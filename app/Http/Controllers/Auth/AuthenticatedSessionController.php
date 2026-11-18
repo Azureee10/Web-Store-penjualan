@@ -30,7 +30,7 @@ class AuthenticatedSessionController extends Controller
 
         return redirect()->intended(
             Auth::user()->isAdmin()
-                ? route('admin.index', absolute: false)
+                ? '/admin'
                 : route('dashboard', absolute: false)
         );
     }

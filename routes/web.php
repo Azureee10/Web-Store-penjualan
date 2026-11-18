@@ -1,15 +1,23 @@
 <?php
 
+namespace App\Models;
+
+use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 
 Route::get('/', function (Request $request) {
     return view('welcome');
 });
+
+Route::post('/products', [ProductController::class, 'store'])->name('products.store');
 
 Route::get('/dashboard', function () {
     return view('dashboard');
@@ -135,56 +143,57 @@ Route::get('/produk/{slug}', function (Request $request, string $slug) {
     ]);
 })->name('product.show');
 
-Route::get('/admin', function (Request $request) {
-    $period = $request->query('periode', 'daily');
-    abort_unless(in_array($period, ['daily', 'weekly', 'monthly'], true), 404);
+// Route::get('/admin', function (Request $request) {
+//     $period = $request->query('periode', 'daily');
+//     abort_unless(in_array($period, ['daily', 'weekly', 'monthly'], true), 404);
 
-    $today = now()->startOfDay();
-    [$chartStart, $buckets] = match ($period) {
-        'weekly' => [
-            $today->copy()->startOfWeek()->subWeeks(11),
-            collect(range(11, 0))->map(fn(int $weeksAgo) => $today->copy()->startOfWeek()->subWeeks($weeksAgo)),
-        ],
-        'monthly' => [
-            $today->copy()->startOfMonth()->subMonths(11),
-            collect(range(11, 0))->map(fn(int $monthsAgo) => $today->copy()->startOfMonth()->subMonths($monthsAgo)),
-        ],
-        default => [
-            $today->copy()->subDays(13),
-            collect(range(13, 0))->map(fn(int $daysAgo) => $today->copy()->subDays($daysAgo)),
-        ],
-    };
+//     $today = now()->startOfDay();
+//     [$chartStart, $buckets] = match ($period) {
+//         'weekly' => [
+//             $today->copy()->startOfWeek()->subWeeks(11),
+//             collect(range(11, 0))->map(fn(int $weeksAgo) => $today->copy()->startOfWeek()->subWeeks($weeksAgo)),
+//         ],
+//         'monthly' => [
+//             $today->copy()->startOfMonth()->subMonths(11),
+//             collect(range(11, 0))->map(fn(int $monthsAgo) => $today->copy()->startOfMonth()->subMonths($monthsAgo)),
+//         ],
+//         default => [
+//             $today->copy()->subDays(13),
+//             collect(range(13, 0))->map(fn(int $daysAgo) => $today->copy()->subDays($daysAgo)),
+//         ],
+//     };
 
-    $visitCounts = DB::table('page_visits')
-        ->where('visited_at', '>=', $chartStart)
-        ->get(['visited_at'])
-        ->countBy(function (object $visit) use ($period) {
-            $date = Carbon::parse($visit->visited_at);
+//     $visitCounts = DB::table('page_visits')
+//         ->where('visited_at', '>=', $chartStart)
+//         ->get(['visited_at'])
+//         ->countBy(function (object $visit) use ($period) {
+//             $date = Carbon::parse($visit->visited_at);
 
-            return match ($period) {
-                'weekly' => $date->startOfWeek()->format('Y-m-d'),
-                'monthly' => $date->format('Y-m'),
-                default => $date->format('Y-m-d'),
-            };
-        });
+//             return match ($period) {
+//                 'weekly' => $date->startOfWeek()->format('Y-m-d'),
+//                 'monthly' => $date->format('Y-m'),
+//                 default => $date->format('Y-m-d'),
+//             };
+//         });
 
-    $usageChart = $buckets->map(function (Carbon $bucket) use ($period, $visitCounts) {
-        $key = match ($period) {
-            'weekly' => $bucket->format('Y-m-d'),
-            'monthly' => $bucket->format('Y-m'),
-            default => $bucket->format('Y-m-d'),
-        };
-        $label = match ($period) {
-            'weekly' => $bucket->format('d/m'),
-            'monthly' => $bucket->locale('id')->translatedFormat('M y'),
-            default => $bucket->format('d/m'),
-        };
+//     $usageChart = $buckets->map(function (Carbon $bucket) use ($period, $visitCounts) {
+//         $key = match ($period) {
+//             'weekly' => $bucket->format('Y-m-d'),
+//             'monthly' => $bucket->format('Y-m'),
+//             default => $bucket->format('Y-m-d'),
+//         };
+//         $label = match ($period) {
+//             'weekly' => $bucket->format('d/m'),
+//             'monthly' => $bucket->locale('id')->translatedFormat('M y'),
+//             default => $bucket->format('d/m'),
+//         };
 
-        return ['label' => $label, 'total' => $visitCounts->get($key, 0)];
-    });
+//         return ['label' => $label, 'total' => $visitCounts->get($key, 0)];
+//     });
 
-    return view('admin.index', compact('period', 'usageChart'));
-})->middleware(['auth', 'verified', 'admin'])->name('admin.index');
+//     return view('admin.index', compact('period', 'usageChart'));
+
+// })->middleware(['auth', 'verified', 'admin'])->name('admin.index');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

@@ -18,6 +18,13 @@ class DatabaseSeeder extends Seeder
     {
         // User::factory(10)->create();
 
+        User::updateOrCreate(['email' => 'azure@gmail.com'], [
+            'name' => 'Azure Admin',
+            'password' => Hash::make('160506'),
+            'role' => 'admin',
+            'email_verified_at' => now(),
+        ]);
+
         User::updateOrCreate(['email' => 'e44253192@student.polije.ac.id'], [
             'name' => 'Admin',
             'password' => Hash::make('iyan160506'),

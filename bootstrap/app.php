@@ -12,12 +12,14 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
         apiPrefix: '/api'
     )
+    
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->appendToGroup('web', [\App\Http\Middleware\TrackPageVisit::class]);
         $middleware->alias([
             'admin' => \App\Http\Middleware\EnsureUserIsAdmin::class,
         ]);
     })
+
     ->withExceptions(function (Exceptions $exceptions): void {
         //
     })->create();
